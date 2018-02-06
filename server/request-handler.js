@@ -30,12 +30,20 @@ var requestHandler = function(request, response, reqData) {
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
   console.log('POSTdata :', request.postData)
   // The outgoing status.
+  var path = new URL('http://www.dummy.com' + request.url); 
 
+  var sortedData = function () {
+    //sort results
+    if (path.searchParams.get('order') === '-createdAt') {
+      return dummyTweets.slice().reverse();
+    } else {
+      return dummyTweets;
+    }
+  };
     
   var getRequestResponse = function () {
     
-    var tweetObj = {results: dummyTweets};
-    
+    var tweetObj = {results: sortedData()};
     // convert into JSON format
     var JSONresult = JSON.stringify(tweetObj);
     // write a response header 
@@ -116,7 +124,6 @@ var requestHandler = function(request, response, reqData) {
 
   var setPath = function() {
     //check if path is valid
-    var path = new URL('http://www.dummy.com' + request.url);
     console.log(path.pathname);
     if (path.pathname === '/classes/messages') {
       return true;
