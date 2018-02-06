@@ -29,10 +29,24 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
   // The outgoing status.
-  
-  if (request.method === 'GET') {
+  var body = [];
+  request.on('data', (chunk) => {
+    //console.log(chunk.toString());
+    body = chunk;
+  }).on('end', () => {
     
-    //get data requested
+    console.log('end of stream: ', body.toString());
+    if (request.method === 'GET') {
+      getRequestResponse();
+    } else if (request.method === 'POST') {
+      postRequestResponse();
+    } else {
+      defaultRequestResponse();
+    }
+  });
+    
+  var getRequestResponse = function () {
+    
     var tweetObj = {results: dummyTweets};
     
     // convert into JSON format
@@ -40,7 +54,7 @@ var requestHandler = function(request, response) {
     // write a response header 
     var statusCode = 200;
     var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'JSON';
+    headers['Content-Type'] = 'application/json';
     response.writeHead(statusCode, headers);
     
     
@@ -48,8 +62,24 @@ var requestHandler = function(request, response) {
     // end response
     response.end(JSONresult);
     
-    
-  } else {
+  };
+  
+  var postRequestResponse = function () {
+    console.log('posting');
+    //get data requested
+    // get data from request (message)
+    var messageData = body;
+    //parseJSON if needed
+    console.log('body in post ', body.toString());
+    var message = JSON.parse(messageData.toString());
+    console.log('posting ', message);
+    //add message to data storage
+    dummyTweets.push(message);
+    //return 201 status
+  };
+
+  //need to fix this part
+  var defaultRequestResponse = function () {
     var statusCode = 200;
 
     // See the note below about CORS headers.
@@ -73,7 +103,7 @@ var requestHandler = function(request, response) {
     // Calling .end "flushes" the response's internal buffer, forcing
     // node to actually send all the data over to the client.
     response.end('Hello, World!');
-  }
+  };
 
 };
 
