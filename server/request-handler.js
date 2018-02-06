@@ -74,8 +74,12 @@ var requestHandler = function(request, response) {
     var message = JSON.parse(messageData.toString());
     console.log('posting ', message);
     //add message to data storage
-    dummyTweets.push(message);
+    dummyTweets.shift(message);
     //return 201 status
+    var statusCode = 201;
+    var headers = defaultCorsHeaders;
+    response.writeHead(statusCode, headers);
+    response.end('POST complete');
   };
 
   //need to fix this part
