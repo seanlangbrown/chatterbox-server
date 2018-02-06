@@ -12,9 +12,9 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
-var requestHandler = function(request, response) {
-  // Request and Response come from node's http module.
-  //
+var requestHandler = function(request, response, reqData) {
+  const { URL, URLSearchParams } = require('url');
+  // Request and Response come from node's http module.  //
   // They include information about both the incoming request, such as
   // headers and URL, and about the outgoing response, such as its status
   // and content.
@@ -28,22 +28,9 @@ var requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
+  console.log('POSTdata :', request.postData)
   // The outgoing status.
-  var body = [];
-  request.on('data', (chunk) => {
-    //console.log(chunk.toString());
-    body = chunk;
-  }).on('end', () => {
-    
-    console.log('end of stream: ', body.toString());
-    if (request.method === 'GET') {
-      getRequestResponse();
-    } else if (request.method === 'POST') {
-      postRequestResponse();
-    } else {
-      defaultRequestResponse();
-    }
-  });
+
     
   var getRequestResponse = function () {
     
@@ -56,7 +43,6 @@ var requestHandler = function(request, response) {
     var headers = defaultCorsHeaders;
     headers['Content-Type'] = 'application/json';
     response.writeHead(statusCode, headers);
-    
     
     //send data back to client 
     // end response
@@ -72,9 +58,12 @@ var requestHandler = function(request, response) {
     //parseJSON if needed
     console.log('body in post ', body.toString());
     var message = JSON.parse(messageData.toString());
-    console.log('posting ', message);
+    
     //add message to data storage
-    dummyTweets.shift(message);
+    message.objectId = assignObjectId();
+    console.log('posting ', message);
+    dummyTweets.unshift(message);
+    console.log('message bank: ', dummyTweets);
     //return 201 status
     var statusCode = 201;
     var headers = defaultCorsHeaders;
@@ -109,23 +98,82 @@ var requestHandler = function(request, response) {
     response.end('Hello, World!');
   };
 
+  var errorMessage = {
+    invalidURL: {
+      text: 'invalid endpoint',
+      number: 404
+    }
+  };
+
+  var requestErrorResponse = function(type) {
+
+    var statusCode = errorMessage[type].number;
+    var headers = defaultCorsHeaders;
+    headers['Content-Type'] = 'text/plain';
+    response.writeHead(statusCode, headers);
+    response.end('Error: ' + errorMessage[type].text);
+  }
+
+  var setPath = function() {
+    //check if path is valid
+    var path = new URL('http://www.dummy.com' + request.url);
+    console.log(path.pathname);
+    if (path.pathname === '/classes/messages') {
+      return true;
+    }
+    return false;
+  };
+
+  var _nextId = 3;
+  var assignObjectId = function() {
+    //console.log('set id ', 1 + dummyTweets.length);
+    return 1 + dummyTweets.length;
+
+  };
+
+
+  //respond to request
+  var body = [];
+  request.on('data', (chunk) => {
+    //console.log(chunk.toString());
+    //console.log(reqData === chunk);
+    body = chunk;
+  });
+  request.on('end', () => {
+    if (!setPath(request.url)) {
+      requestErrorResponse('invalidURL');
+    }
+    
+    console.log('end of stream: ', body);
+    if (request.method === 'GET') {
+      getRequestResponse();
+    } else if (request.method === 'POST') {
+      postRequestResponse();
+    } else {
+      defaultRequestResponse();
+    }
+  });
+
 };
 
 var dummyTweets = [
   {
     username: 'Steve Jobs',
     text: 'billionaire',
-    roomname: 'apple'
+    roomname: 'apple',
+    objectId: 1
   },
   {
     username: 'Batman',
     text: 'i am the night',
-    roomname: 'cave'
+    roomname: 'cave',
+    objectId: 2
   },
   {
     username: 'Mcdonalds',
     text: 'profits are all',
-    roomname: 'everywhere'
+    roomname: 'everywhere',
+    objectId: 3
   }
 
 ];
@@ -147,5 +195,5 @@ var defaultCorsHeaders = {
   
 };
 
-module.exports = requestHandler;
+module.exports.requestHandler = requestHandler;
 
