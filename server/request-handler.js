@@ -13,7 +13,10 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 
 var requestHandler = function(request, response, reqData) {
-  const { URL, URLSearchParams } = require('url');
+  const URL = require('url');
+  const searchParams = require('url-search-params');
+  const parse = require('url-parse');
+  //console.log(searchParams);
   // Request and Response come from node's http module.  //
   // They include information about both the incoming request, such as
   // headers and URL, and about the outgoing response, such as its status
@@ -28,13 +31,15 @@ var requestHandler = function(request, response, reqData) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-  console.log('POSTdata :', request.postData)
+  console.log('POSTdata :', request.postData);
   // The outgoing status.
-  var path = new URL('http://www.dummy.com' + request.url); 
+  var path = new URL.Url('http://www.dummy.com' + request.url); 
 
   var sortedData = function () {
     //sort results
-    if (path.searchParams.get('order') === '-createdAt') {
+    var UrlSearchParams = new searchParams(path);
+    console.log('search parameters: ', UrlSearchParams.has('order'));
+    if (UrlSearchParams.has('order') && UrlSearchParams.get('order') === '-createdAt') {
       return dummyTweets.slice().reverse();
     } else {
       return dummyTweets;
@@ -124,8 +129,8 @@ var requestHandler = function(request, response, reqData) {
 
   var setPath = function() {
     //check if path is valid
-    console.log(path.pathname);
-    if (path.pathname === '/classes/messages') {
+    var pathname = parse('http://dummy.com' + request.url).pathname;
+    if (pathname === '/classes/messages') {
       return true;
     }
     return false;
