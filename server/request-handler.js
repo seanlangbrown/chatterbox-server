@@ -37,9 +37,10 @@ var requestHandler = function(request, response, reqData) {
 
   var sortedData = function () {
     //sort results
-    var UrlSearchParams = new searchParams(path);
-    console.log('search parameters: ', UrlSearchParams.has('order'));
-    if (UrlSearchParams.has('order') && UrlSearchParams.get('order') === '-createdAt') {
+    var UrlSearchParams = URL.parse('http://www.dummy.com' + request.url, true).query
+    //console.log('search parameters: ', UrlSearchParams);
+    if (UrlSearchParams['order'] && UrlSearchParams['order'] === '-createdAt') {
+      //console.log('reversing');
       return dummyTweets.slice().reverse();
     } else {
       return dummyTweets;
