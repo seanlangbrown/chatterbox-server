@@ -12,6 +12,35 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
+var dummyTweets = [
+  {
+    username: 'Steve Jobs',
+    text: 'billionaire',
+    roomname: 'apple',
+    objectId: 1
+  },
+  {
+    username: 'Batman',
+    text: 'i am the night',
+    roomname: 'cave',
+    objectId: 2
+  },
+  {
+    username: 'Mcdonalds',
+    text: 'profits are all',
+    roomname: 'everywhere',
+    objectId: 3
+  }
+];
+
+  
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key',
+  'access-control-max-age': 10 // Seconds.
+};
+
 var requestHandler = function(request, response, reqData) {
   const URL = require('url');
   const searchParams = require('url-search-params');
@@ -33,23 +62,34 @@ var requestHandler = function(request, response, reqData) {
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
   console.log('POSTdata :', request.postData);
   // The outgoing status.
+  
+  //starter data
+  
+  
+  var assignObjectId = function() {
+    //console.log('set id ', 1 + dummyTweets.length);
+    return 1 + dummyTweets.length;
+  };
+  
+ 
+
   var path = new URL.Url('http://www.dummy.com' + request.url); 
 
-  var sortedData = function () {
+  var sortedData = function (request) {
     //sort results
-    var UrlSearchParams = URL.parse('http://www.dummy.com' + request.url, true).query
+    var UrlSearchParams = URL.parse('http://www.dummy.com' + request.url, true).query;
     //console.log('search parameters: ', UrlSearchParams);
     if (UrlSearchParams['order'] && UrlSearchParams['order'] === '-createdAt') {
-      //console.log('reversing');
+      console.log('reversing');
       return dummyTweets.slice().reverse();
     } else {
       return dummyTweets;
     }
   };
     
-  var getRequestResponse = function () {
+  var getRequestResponse = function (request, response, body) {
     
-    var tweetObj = {results: sortedData()};
+    var tweetObj = {results: sortedData(request)};
     // convert into JSON format
     var JSONresult = JSON.stringify(tweetObj);
     // write a response header 
@@ -64,7 +104,7 @@ var requestHandler = function(request, response, reqData) {
     
   };
   
-  var postRequestResponse = function () {
+  var postRequestResponse = function (request, response, body) {
     console.log('posting');
     //get data requested
     // get data from request (message)
@@ -86,7 +126,7 @@ var requestHandler = function(request, response, reqData) {
   };
 
   //need to fix this part
-  var defaultRequestResponse = function () {
+  var defaultRequestResponse = function (request, response, body) {
     var statusCode = 200;
 
     // See the note below about CORS headers.
@@ -119,14 +159,14 @@ var requestHandler = function(request, response, reqData) {
     }
   };
 
-  var requestErrorResponse = function(type) {
+  var requestErrorResponse = function(type, response) {
 
     var statusCode = errorMessage[type].number;
     var headers = defaultCorsHeaders;
     headers['Content-Type'] = 'text/plain';
     response.writeHead(statusCode, headers);
     response.end('Error: ' + errorMessage[type].text);
-  }
+  };
 
   var setPath = function() {
     //check if path is valid
@@ -135,13 +175,6 @@ var requestHandler = function(request, response, reqData) {
       return true;
     }
     return false;
-  };
-
-  var _nextId = 3;
-  var assignObjectId = function() {
-    //console.log('set id ', 1 + dummyTweets.length);
-    return 1 + dummyTweets.length;
-
   };
 
 
@@ -154,42 +187,22 @@ var requestHandler = function(request, response, reqData) {
   });
   request.on('end', () => {
     if (!setPath(request.url)) {
-      requestErrorResponse('invalidURL');
+      requestErrorResponse('invalidURL', response);
     }
     
     console.log('end of stream: ', body);
     if (request.method === 'GET') {
-      getRequestResponse();
+      getRequestResponse(request, response, body);
     } else if (request.method === 'POST') {
-      postRequestResponse();
+      postRequestResponse(request, response, body);
     } else {
-      defaultRequestResponse();
+      defaultRequestResponse(request, response, body);
     }
   });
 
 };
 
-var dummyTweets = [
-  {
-    username: 'Steve Jobs',
-    text: 'billionaire',
-    roomname: 'apple',
-    objectId: 1
-  },
-  {
-    username: 'Batman',
-    text: 'i am the night',
-    roomname: 'cave',
-    objectId: 2
-  },
-  {
-    username: 'Mcdonalds',
-    text: 'profits are all',
-    roomname: 'everywhere',
-    objectId: 3
-  }
 
-];
 // These headers will allow Cross-Origin Resource Sharing (CORS).
 // This code allows this server to talk to websites that
 // are on different domains, for instance, your chat client.
@@ -199,14 +212,6 @@ var dummyTweets = [
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key',
-  'access-control-max-age': 10 // Seconds.
-  
-  
-};
 
 module.exports.requestHandler = requestHandler;
 
